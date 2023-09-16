@@ -1,0 +1,13 @@
+{
+  "module_id": "biotinker:display",
+  "visibility": "public",
+  "url": "https://github.com/biotinker/viam-i2c-display",
+  "description": "Module for i2c OLED displays",
+  "models": [
+    {
+      "api": "biotinker:component:display",
+      "model": "biotinker:component:display"
+    }
+  ],
+  "entrypoint": "viam-i2c-display"
+}
