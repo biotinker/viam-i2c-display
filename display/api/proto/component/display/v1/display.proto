@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package biotinker.component.display.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/biotinker/viam-i2c-display/display/api/proto/component/display/v1";
+
+service DisplayService {
+  rpc DisplayBytes(DisplayBytesRequest) returns (DisplayBytesResponse) {
+    option (google.api.http) = {
+      post: "/biotinker/api/v1/component/display/{name}/display_bytes"
+    };
+  }
+
+  rpc WriteString(WriteStringRequest) returns (WriteStringResponse) {
+    option (google.api.http) = {
+      post: "/biotinker/api/v1/component/display/{name}/write_string"
+    };
+  }
+
+  rpc DrawLine(DrawLineRequest) returns (DrawLineResponse) {
+    option (google.api.http) = {
+      post: "/biotinker/api/v1/component/display/{name}/draw_line"
+    };
+  }
+
+  rpc Reset(ResetRequest) returns (ResetResponse) {
+    option (google.api.http) = {
+      post: "/biotinker/api/v1/component/display/{name}/reset"
+    };
+  }
+  
+  rpc DoCommand(DoCommandRequest) returns (DoCommandResponse) {
+    option (google.api.http) = {
+      post: "/biotinker/api/v1/component/display/{name}/do_command"
+    };
+  }
+}
+
+message DisplayBytesRequest {
+  string name = 1;
+  bytes data = 2;
+}
+
+message DisplayBytesResponse {
+}
+
+message WriteStringRequest {
+  string name = 1;
+  int32 xloc = 2;
+  int32 yloc = 3;
+  string text = 4;
+}
+
+message WriteStringResponse {
+}
+
+message DrawLineRequest {
+  string name = 1;
+  int32 x1 = 2;
+  int32 y1 = 3;
+  int32 x2 = 4;
+  int32 y2 = 5;
+}
+
+message DrawLineResponse {
+}
+message ResetRequest {
+  string name = 1;
+}
+message ResetResponse {
+}
+
+message DoCommandRequest {
+  string name = 1;
+  google.protobuf.Struct command = 2;
+}
+
+message DoCommandResponse {
+  google.protobuf.Struct result = 1;
+}
