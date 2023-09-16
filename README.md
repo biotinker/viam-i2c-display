@@ -44,7 +44,7 @@ Uses Bresenham's algorithm to draw the specified line. (0,0) is the bottom left 
 
 ### WriteString(x, y, text)
 
-Will write the given text starting at the given location. (0,0) will start on the left side of the screen, centered vertically. Will wrap, but will not linebreak for you.
+Will write the given text starting at the given location. (0,0) will start on the left side of the screen, near the bottom. Will wrap, but will not linebreak for you.
 
 ### DisplayBytes(bytes)
 
