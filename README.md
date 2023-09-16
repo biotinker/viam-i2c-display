@@ -68,4 +68,4 @@ You will want to import `"github.com/biotinker/viam-i2c-display/display/api/disp
 
 This will produce the following:
 
-![image info](./hey.png)
+![image info](./hey.jpg)
