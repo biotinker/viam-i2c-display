@@ -2,34 +2,34 @@ package display
 
 import (
 	"context"
+	"encoding/hex"
 	"math"
 	"time"
-	"encoding/hex"
 
-	"go.viam.com/utils"
-	"github.com/edaniels/golog"
-	"go.viam.com/rdk/components/board"
-	"go.viam.com/rdk/components/board/genericlinux"
 	"github.com/biotinker/viam-i2c-display/display/api/displayapi"
+	"go.viam.com/rdk/components/board/genericlinux/buses"
+	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/utils"
 )
 
-/*	Values from the original arduino C library that I did not use, if you need them
- * 	sh110xBLACK                   = 0    ///< Draw 'off' pixels
-	sh110xWHITE                   = 1    ///< Draw 'on' pixels
-	sh110xINVERSE                 = 2    ///< Invert pixels
-	sh110xCOLUMNADDR         byte = 0x21 ///< See datasheet
-	sh110xPAGEADDR           byte = 0x22 ///< See datasheet
-	sh110xCHARGEPUMP         byte = 0x8D ///< See datasheet
-	sh110xDISPLAYALLON       byte = 0xA5 ///< Not currently used
-	sh110xINVERTDISPLAY      byte = 0xA7 ///< See datasheet
-	sh110xDISPLAYON          byte = 0xAF ///< See datasheet
-	sh110xSETPAGEADDR        byte = 0xB0 ///< Specify page address to load display RAM data to page address
-	sh110xCOMSCANDEC         byte = 0xC8 ///< See datasheet
-	sh110xSETCOMPINS         byte = 0xDA ///< See datasheet
-	sh110xSETLOWCOLUMN       byte = 0x00 ///< Not currently used
-	sh110xSETHIGHCOLUMN      byte = 0x10 ///< Not currently used
-	sh110xSETSTARTLINE       byte = 0x40 ///< See datasheet
+/*
+		Values from the original arduino C library that I did not use, if you need them
+	 * 	sh110xBLACK                   = 0    ///< Draw 'off' pixels
+		sh110xWHITE                   = 1    ///< Draw 'on' pixels
+		sh110xINVERSE                 = 2    ///< Invert pixels
+		sh110xCOLUMNADDR         byte = 0x21 ///< See datasheet
+		sh110xPAGEADDR           byte = 0x22 ///< See datasheet
+		sh110xCHARGEPUMP         byte = 0x8D ///< See datasheet
+		sh110xDISPLAYALLON       byte = 0xA5 ///< Not currently used
+		sh110xINVERTDISPLAY      byte = 0xA7 ///< See datasheet
+		sh110xDISPLAYON          byte = 0xAF ///< See datasheet
+		sh110xSETPAGEADDR        byte = 0xB0 ///< Specify page address to load display RAM data to page address
+		sh110xCOMSCANDEC         byte = 0xC8 ///< See datasheet
+		sh110xSETCOMPINS         byte = 0xDA ///< See datasheet
+		sh110xSETLOWCOLUMN       byte = 0x00 ///< Not currently used
+		sh110xSETHIGHCOLUMN      byte = 0x10 ///< Not currently used
+		sh110xSETSTARTLINE       byte = 0x40 ///< See datasheet
 */
 const (
 	sh110xMEMORYMODE         byte = 0x20 ///< See datasheet
@@ -49,14 +49,14 @@ const (
 )
 
 const defaultI2Caddr = 0x3C
-var Model = resource.ModelNamespace("biotinker").WithFamily("component").WithModel("display")
 
+var Model = resource.ModelNamespace("biotinker").WithFamily("component").WithModel("display")
 
 // Config is used for converting config attributes.
 type Config struct {
-	I2CBus  string `json:"i2c_bus"`
-	I2cAddr int    `json:"i2c_addr,omitempty"`
-	SkipAnimation bool  `json:"skip_animation",omitempty"`
+	I2CBus        string `json:"i2c_bus"`
+	I2cAddr       int    `json:"i2c_addr,omitempty"`
+	SkipAnimation bool   `json:"skip_animation",omitempty"`
 }
 
 // Validate ensures all parts of the config are valid.
@@ -77,15 +77,15 @@ func init() {
 				ctx context.Context,
 				deps resource.Dependencies,
 				conf resource.Config,
-				logger golog.Logger,
+				logger logging.Logger,
 			) (displayapi.Display, error) {
 				newConf, err := resource.NativeConfig[*Config](conf)
 				if err != nil {
 					return nil, err
 				}
 				return newDisplay(ctx, deps, conf.ResourceName(), newConf, logger)
-		},
-	})
+			},
+		})
 }
 
 func newDisplay(
@@ -93,9 +93,9 @@ func newDisplay(
 	deps resource.Dependencies,
 	name resource.Name,
 	attr *Config,
-	logger golog.Logger,
+	logger logging.Logger,
 ) (*display, error) {
-	i2cbus, err := genericlinux.NewI2cBus(attr.I2CBus)
+	i2cbus, err := buses.NewI2cBus(attr.I2CBus)
 	if err != nil {
 		return nil, err
 	}
@@ -104,22 +104,22 @@ func newDisplay(
 		addr = defaultI2Caddr
 		logger.Warnf("using i2c address : 0x%s", hex.EncodeToString([]byte{byte(addr)}))
 	}
-	
+
 	d := &display{
-		Named:    name.AsNamed(),
-		logger: logger,
-		bus:    i2cbus,
-		addr:   byte(addr),
+		Named:   name.AsNamed(),
+		logger:  logger,
+		bus:     i2cbus,
+		addr:    byte(addr),
 		current: blank(),
 	}
 
-		// Init the display multiple times, hoping at least one works- sometimes it takes several writes to get a good init
+	// Init the display multiple times, hoping at least one works- sometimes it takes several writes to get a good init
 	for i := 0; i < 4; i++ {
 		logger.Warn("init", i)
 		d.initDisp(ctx)
 	}
-	
-	if !attr.SkipAnimation{
+
+	if !attr.SkipAnimation {
 		logger.Warn("animation")
 		d.initAnimation(ctx)
 	}
@@ -136,10 +136,10 @@ type display struct {
 	resource.Named
 	resource.AlwaysRebuild
 	resource.TriviallyCloseable
-	logger     golog.Logger
-	bus        board.I2C
-	addr       byte
-	current    []byte
+	logger  logging.Logger
+	bus     buses.I2C
+	addr    byte
+	current []byte
 }
 
 func (d *display) DisplayBytes(ctx context.Context, data []byte) error {
@@ -157,7 +157,7 @@ func (d *display) DisplayBytes(ctx context.Context, data []byte) error {
 func (d *display) WriteString(ctx context.Context, xloc, yloc int, text string) error {
 	new := make([]byte, len(d.current))
 	copy(new, d.current)
-	
+
 	new = writeString(xloc, yloc, text, new)
 	return d.writeBuf(ctx, new)
 }
@@ -201,7 +201,6 @@ func (d *display) initDisp(ctx context.Context) error {
 		sh110xDISPLAYALLONRESUME, // 0xa4
 		sh110xNORMALDISPLAY,      // 0xa6
 	}
-	
 
 	handle.Write(ctx, init)
 
@@ -291,8 +290,8 @@ func writePixel(x, y int, buf []byte) []byte {
 		y += LENGTH
 	}
 
-	idx := x+(y/8)*WIDTH
-	blen := (WIDTH * LENGTH)/8
+	idx := x + (y/8)*WIDTH
+	blen := (WIDTH * LENGTH) / 8
 	for idx >= blen {
 		idx -= blen
 	}
