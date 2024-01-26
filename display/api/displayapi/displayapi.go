@@ -4,11 +4,11 @@ package displayapi
 import (
 	"context"
 
-	"github.com/edaniels/golog"
 	"go.viam.com/utils/protoutils"
 	"go.viam.com/utils/rpc"
 
 	pb "github.com/biotinker/viam-i2c-display/display/api/proto/component/display/v1"
+	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/robot"
 )
@@ -37,7 +37,7 @@ func init() {
 			conn rpc.ClientConn,
 			remoteName string,
 			name resource.Name,
-			logger golog.Logger,
+			logger logging.Logger,
 		) (Display, error) {
 			return NewClientFromConn(conn, remoteName, name, logger), nil
 		},
@@ -129,12 +129,12 @@ func (s *serviceServer) DoCommand(ctx context.Context, req *pb.DoCommandRequest)
 }
 
 // NewClientFromConn creates a new gizmo RPC client from an existing connection.
-func NewClientFromConn(conn rpc.ClientConn, remoteName string, name resource.Name, logger golog.Logger) Display {
+func NewClientFromConn(conn rpc.ClientConn, remoteName string, name resource.Name, logger logging.Logger) Display {
 	sc := newSvcClientFromConn(conn, remoteName, name, logger)
 	return clientFromSvcClient(sc, name.ShortName())
 }
 
-func newSvcClientFromConn(conn rpc.ClientConn, remoteName string, name resource.Name, logger golog.Logger) *serviceClient {
+func newSvcClientFromConn(conn rpc.ClientConn, remoteName string, name resource.Name, logger logging.Logger) *serviceClient {
 	client := pb.NewDisplayServiceClient(conn)
 	sc := &serviceClient{
 		Named:  name.PrependRemote(remoteName).AsNamed(),
@@ -149,7 +149,7 @@ type serviceClient struct {
 	resource.AlwaysRebuild
 	resource.TriviallyCloseable
 	client pb.DisplayServiceClient
-	logger golog.Logger
+	logger logging.Logger
 }
 
 // client is an gripper client.
